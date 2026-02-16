@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-lgtm
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana-lgtm
+  template:
+    metadata:
+      labels:
+        app: grafana-lgtm
+    spec:
+      containers:
+        - name: lgtm
+          image: grafana/otel-lgtm:latest
+          ports:
+            - containerPort: 3000
+            - containerPort: 4317
+            - containerPort: 4318
+            - containerPort: 9090
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1536Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /data/grafana
+            - name: loki-data
+              mountPath: /data/loki
+            - name: tempo-data
+              mountPath: /data/tempo
+            - name: prometheus-data
+              mountPath: /data/prometheus
+      volumes:
+        - name: grafana-data
+          emptyDir: {}
+        - name: loki-data
+          emptyDir: {}
+        - name: tempo-data
+          emptyDir: {}
+        - name: prometheus-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-lgtm
+  namespace: observability
+spec:
+  type: LoadBalancer
+  selector:
+    app: grafana-lgtm
+  ports:
+    - name: grafana
+      port: 3000
+      targetPort: 3000
+    - name: otel-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otel-http
+      port: 4318
+      targetPort: 4318

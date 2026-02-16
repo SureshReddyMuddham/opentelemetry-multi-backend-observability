@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-api
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orders-api
+  template:
+    metadata:
+      labels:
+        app: orders-api
+    spec:
+      containers:
+        - name: orders-api
+          image: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/orders-api:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          env:
+            - name: PORT
+              value: "3000"
+            - name: OTEL_SERVICE_NAME
+              value: "orders-api"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector:4318"
+            - name: NODE_OPTIONS
+              value: "--require ./src/instrumentation.js"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-api
+  namespace: observability
+spec:
+  type: LoadBalancer
+  selector:
+    app: orders-api
+  ports:
+    - port: 80
+      targetPort: 3000

@@ -1,0 +1,8 @@
+# SigNoz is deployed via Helm chart:
+# helm repo add signoz https://charts.signoz.io
+# helm install signoz signoz/signoz -n observability \
+#   --set frontend.service.type=LoadBalancer
+#
+# This file is kept for reference of the manual deployment option.
+# The Helm chart handles ClickHouse, ZooKeeper, query-service,
+# frontend, and otel-collector automatically.
