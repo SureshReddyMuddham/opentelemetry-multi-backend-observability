@@ -1,0 +1,49 @@
+# OTel Collector config for Docker Compose deployment
+# Fan-out to Grafana LGTM, SigNoz, and Elastic APM
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  otlphttp/lgtm:
+    endpoint: http://grafana-lgtm:4318
+    tls:
+      insecure: true
+
+  otlp/signoz:
+    endpoint: signoz-otel-collector:4317
+    tls:
+      insecure: true
+
+  otlp/elastic:
+    endpoint: http://apm-server:8200
+    tls:
+      insecure: true
+
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/lgtm, otlp/signoz, otlp/elastic, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/lgtm, otlp/signoz, otlp/elastic, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/lgtm, otlp/signoz, otlp/elastic, debug]
